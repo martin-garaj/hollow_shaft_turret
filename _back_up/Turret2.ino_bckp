@@ -1,0 +1,159 @@
+// Continue writing the Command functions (translating packets into commands)
+// Then implement SerialTransfer and pySerialTransfer (already tested)
+// Lastly, work on the main loop, integrate sensors, 
+// serial communication and control into several high level commands.
+
+// I AM SO CLOSE TO FINISHING THIS PROJECT
+
+// Below code is tested and works, try to connect motors next time.
+
+#include "pfm_cnc.hpp"
+#include "pfm_isr.h"
+#include "pkt_process_cmd.hpp"
+
+// Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
+// is used in I2Cdev.h
+#include "Wire.h"
+// I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
+// for both classes must be in the include path of your project
+#include "I2Cdev.h"
+#include "MPU6050.h"
+
+
+// class default I2C address is 0x68
+// specific I2C addresses may be passed as a parameter here
+// AD0 low = 0x68 (default for InvenSense evaluation board)
+// AD0 high = 0x69
+MPU6050 accelgyro;
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
+int16_t mx, my, mz;
+
+// Pfm_cnc Pfm = Pfm_cnc();
+Pfm_cnc Pfm;
+Pkt_pfm Pkt(&Pfm);
+
+union Pkt_uint16_t {
+    uint16_t val;
+    uint8_t arr[2];
+};
+
+void setup()
+{
+  Serial.begin(115200);
+  while (!Serial) 
+  { 
+    ; // Wait for serial to connect 
+  }
+  Serial.println("Running.");
+  // delay(200);
+
+  // // IMU
+  // // join I2C bus (I2Cdev library doesn't do this automatically)
+  // Wire.begin();
+  // // initialize device
+  // Serial.println("Initializing I2C devices...");
+  // accelgyro.initialize();
+  // // verify connection
+  // Serial.println("Testing device connections...");
+  // Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+
+  Pfm.init();
+  // Pfm.init_memory();
+  // enable cnc
+  Pfm.enable_cnc();
+
+// set initial direction and speed  
+  // Pfm.set_target_freq(PFM_Y, 8, false);
+
+  bool Pkt_correct = false;
+  uint8_t test_cmd_0[4] = {0x01, 0x01, 0x08, 0x00};
+  Pkt_correct = Pkt.process_command(CMD_SET_TARGET_FREQ, 4, test_cmd_0);
+
+  uint8_t test_cmd_1[7] = {0x02, 0x01, 0x08, 0x00, 0xFF, 0xFF, 0xFF};
+  Pkt_correct = Pkt.process_command(CMD_SET_TARGET_DELTA, 7, test_cmd_1);
+
+  uint8_t test_cmd_2[7] = {0x04, 0x01, 0x08, 0x00, 0xFF, 0xFF, 0xFE};
+  Pkt_correct = Pkt.process_command(CMD_SET_TARGET_DELTA, 7, test_cmd_2);
+
+  if(Pkt_correct){
+    Serial.print("Pkt correct \n");
+  }else{
+    Serial.print("Pkt INCORRECT \n");
+  }
+
+  Serial.print("init X \t");
+  Serial.print(int32_t(pfm[PFM_X]._isr_pfm_counter)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_X].pfm_delta_steps)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_X].pfm_target_freq)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_X].pfm_direction)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_X].pfm_target_delta)); Serial.print("\t");
+  Serial.print("\n");
+
+  Serial.print("init Y \t");
+  Serial.print(int32_t(pfm[PFM_Y]._isr_pfm_counter)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Y].pfm_delta_steps)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Y].pfm_target_freq)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Y].pfm_direction)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Y].pfm_target_delta)); Serial.print("\t");
+  Serial.print("\n");
+
+  Serial.print("init Z \t");
+  Serial.print(int32_t(pfm[PFM_Z]._isr_pfm_counter)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Z].pfm_delta_steps)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Z].pfm_target_freq)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Z].pfm_direction)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Z].pfm_target_delta)); Serial.print("\t");
+  Serial.print("\n");
+
+}
+
+
+void loop()
+{
+  // if(Pfm.get_delta_steps(PFM_Y) > 1000)
+  // {
+  //   Pfm.set_target_freq(PFM_Y, 8, false);
+  // }
+  // if(Pfm.get_delta_steps(PFM_Y) <= 0)
+  // {
+  //   Pfm.set_target_freq(PFM_Y, 8, true);
+  // }
+
+  // // // Pfm.enable_cnc();
+  // // pfm[PFM_Y].pfm_direction = 1;
+  // // pfm[PFM_Y].pfm_target_freq = 4;
+  // // pfm[PFM_Y]._cnc_shield_step_pin = 3;
+
+  // Serial.print("state \t");
+  // Serial.print(int32_t(pfm[PFM_Y]._isr_pfm_counter)); Serial.print("\t");
+  // Serial.print(int32_t(pfm[PFM_Y].pfm_delta_steps)); Serial.print("\t");
+  // Serial.print(int32_t(pfm[PFM_Y].pfm_target_freq)); Serial.print("\t");
+  // Serial.print(int32_t(pfm[PFM_Y].pfm_direction)); Serial.print("\t");
+  // // Serial.print(int32_t(pfm[PFM_Y].pfm_target_delta)); Serial.print("\t");
+  // Serial.print(int32_t(pfm[PFM_Y]._cnc_shield_step_pin)); Serial.print("\t");
+  // Serial.print("\n");
+
+  // // read raw accel/gyro measurements from device
+  // int t1 = micros();
+  // accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+  // int t2 = micros();
+
+  // // Serial.print("a/g/m:\t");
+  // // Serial.print(ax); Serial.print("\t");
+  // // Serial.print(ay); Serial.print("\t");
+  // // Serial.print(az); Serial.print("\t");
+  // // Serial.print(gx); Serial.print("\t");
+  // // Serial.print(gy); Serial.print("\t");
+  // // Serial.print(gz); Serial.print("\t");
+  // // Serial.print(mx); Serial.print("\t");
+  // // Serial.print(my); Serial.print("\t");
+  // // Serial.print(mz); Serial.print("\t");
+  // // Serial.print(t2-t1); Serial.print("\t");
+  // // Serial.print(float(Pfm.get_delta_steps(PFM_X))/1600.0, 10); Serial.print("\t");
+  // // Serial.print("\n");
+
+
+  // // delay(100);
+
+}
