@@ -9,6 +9,6 @@
 // frequency value considered as STOP
 #define INACTIVE_FREQ           65535
 // default PFM frequency (can be changed in software)
-#define DEFAULT_PFM_FREQ        3200
+#define DEFAULT_PFM_FREQ        6400
 // derive balue of interrupt counter with prescaler 1:1
 #define INTERRUPT_COUNTER       F_CPU/2/DEFAULT_PFM_FREQ

@@ -7,3 +7,4 @@
 #define CMD_DISABLE_CNC         0x06 // disable_cnc(void)
 #define CMD_SET_DELTA_STEPS     0x07 // set_delta_steps(uint8_t this_pfm, int32_t delta_steps)
 #define CMD_STOP                0x08 // halts execution and resets memory
+#define CMD_GET_ISR_FREQ        0x09 // uint32_t get_isr_freq(void)

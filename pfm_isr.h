@@ -53,8 +53,6 @@ ISR(TIMER1_COMPA_vect)
     if (_isr_pfm_busy) { return; } // The busy-flag is used to avoid reentering this interrupt
     _isr_pfm_busy = true;
 
-    // digitalWrite(LED_PIN, ~digitalRead(LED_PIN));
-
     for(uint8_t this_pfm=0; this_pfm<NUM_PFM; this_pfm++)
     {
         // default state
@@ -92,7 +90,7 @@ ISR(TIMER1_COMPA_vect)
             }
 
             // debug only
-            digitalWrite(LED_PIN, HIGH);            
+            digitalWrite(LED_PIN, HIGH);
         }
 
         // run until delta steps reached

@@ -132,9 +132,14 @@ int32_t Pfm_cnc::get_delta_steps(uint8_t this_pfm)
     return pfm[this_pfm].pfm_delta_steps;
 }
 
-void Pfm_cnc::set_isr_freq(uint32_t freq)
+void Pfm_cnc::set_isr_freq(uint16_t freq)
 {
     OCR1A = F_CPU/2/freq;
+}
+
+uint16_t Pfm_cnc::get_isr_freq(void)
+{
+    return F_CPU/2/OCR1A;
 }
 
 void Pfm_cnc::init(int32_t delta_steps_x, int32_t delta_steps_y, int32_t delta_steps_z)
@@ -208,7 +213,7 @@ bool Pfm_cnc::get_control(uint8_t this_pfm)
     return pfm[this_pfm].pfm_control_target_delta;
 }
 
-void Pfm_cnc::ignore_isr(bool ignore)
+void Pfm_cnc::block_isr(bool ignore)
 {
     _isr_pfm_busy = ignore;
 }

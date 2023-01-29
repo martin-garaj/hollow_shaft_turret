@@ -5,8 +5,6 @@
 
 // I AM SO CLOSE TO FINISHING THIS PROJECT
 
-// Below code is tested and works, try to connect motors next time.
-
 #include "pfm_cnc.hpp"
 #include "pfm_isr.h"
 #include "pkt_process_cmd.hpp"
@@ -38,6 +36,8 @@ union Pkt_uint16_t {
     uint8_t arr[2];
 };
 
+uint8_t return_buffer[4];
+
 void setup()
 {
   Serial.begin(115200);
@@ -67,20 +67,34 @@ void setup()
   // Pfm.set_target_freq(PFM_Y, 8, false);
 
   bool Pkt_correct = false;
-  uint8_t test_cmd_0[4] = {0x01, 0x01, 0x08, 0x00};
-  Pkt_correct = Pkt.process_command(CMD_SET_TARGET_FREQ, 4, test_cmd_0);
+  uint8_t test_CMD_SET_TARGET_FREQ[4] = {0x0F, 0x00, 0xFF, 0x0F};
+  Pkt_correct = Pkt.process_command(CMD_SET_TARGET_FREQ, 4, test_CMD_SET_TARGET_FREQ, return_buffer);
+  if(Pkt_correct){Serial.print("Pkt correct \n");}else{Serial.print("Pkt INCORRECT \n");}
 
-  uint8_t test_cmd_1[7] = {0x02, 0x01, 0x08, 0x00, 0xFF, 0xFF, 0xFF};
-  Pkt_correct = Pkt.process_command(CMD_SET_TARGET_DELTA, 7, test_cmd_1);
+  // uint8_t test_CMD_SET_TARGET_DELTA[7] = {0x02, 0x01, 0x08, 0x00, 0xFF, 0xFF, 0xFF};
+  // Pkt_correct = Pkt.process_command(CMD_SET_TARGET_DELTA, 7, test_CMD_SET_TARGET_DELTA, return_buffer);
+  // if(Pkt_correct){Serial.print("Pkt correct \n");}else{Serial.print("Pkt INCORRECT \n");}
 
-  uint8_t test_cmd_2[7] = {0x04, 0x01, 0x08, 0x00, 0xFF, 0xFF, 0xFE};
-  Pkt_correct = Pkt.process_command(CMD_SET_TARGET_DELTA, 7, test_cmd_2);
+  uint8_t test_CMD_GET_DELTA_STEPS[7] = {0x02};
+  Pkt_correct = Pkt.process_command(CMD_GET_DELTA_STEPS, 1, test_CMD_GET_DELTA_STEPS, return_buffer);
+  if(Pkt_correct){Serial.print("Pkt correct \n");}else{Serial.print("Pkt INCORRECT \n");}
+  for (int i = 3; i > -1; i--) Serial.print(return_buffer[i], HEX); Serial.print("\n");
 
-  if(Pkt_correct){
-    Serial.print("Pkt correct \n");
-  }else{
-    Serial.print("Pkt INCORRECT \n");
-  }
+  uint8_t test_CMD_SET_ISR_FREQ[7] = {0x19, 0x00}; // 6400
+  // uint8_t test_CMD_SET_ISR_FREQ[7] = {0x12, 0xC0}; // 3200
+  Pkt_correct = Pkt.process_command(CMD_SET_ISR_FREQ, 2, test_CMD_SET_ISR_FREQ, NULL);
+  if(Pkt_correct){Serial.print("Pkt correct \n");}else{Serial.print("Pkt INCORRECT \n");}
+
+  Pkt_correct = Pkt.process_command(CMD_GET_ISR_FREQ, 0, NULL, return_buffer);
+  if(Pkt_correct){Serial.print("Pkt correct \n");}else{Serial.print("Pkt INCORRECT \n");}
+  for (int i = 3; i > -1; i--) Serial.print(return_buffer[i], HEX); Serial.print("\n");
+
+
+  delay(5000);
+  Pkt_correct = Pkt.process_command(CMD_DISABLE_CNC, 0, NULL, NULL);
+  delay(2000);
+  Pkt_correct = Pkt.process_command(CMD_ENABLE_CNC, 0, NULL, NULL);
+
 
   Serial.print("init X \t");
   Serial.print(int32_t(pfm[PFM_X]._isr_pfm_counter)); Serial.print("\t");
