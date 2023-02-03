@@ -3,12 +3,17 @@
 // #include "pfm_registers.h"
 // arduino headers
 #include <Arduino.h>
-// arduino headers
+// Pulse Frequency Modulation
+#include <pfm_cnc.hpp>
+// Inertial Measurement Unit
 #include <pfm_cnc.hpp>
 
-Pkt_pfm::Pkt_pfm(Pfm_cnc *pfm_cnc){
+
+Pkt_pfm::Pkt_pfm(Pfm_cnc *pfm_cnc, Imu *imu){
     // Pfm_cnc *_pfm_cnc = pfm_cnc;
     this->_pfm_cnc = pfm_cnc;
+    this->_imu = imu;
+    // imu_regs _imu_meas;
 };
 
 
@@ -50,7 +55,7 @@ void Pkt_pfm::uint16_t_to_arr(uint16_t val,
     union Pkt_uint16_t data;
     data.val = val;
     for(uint8_t ii=0; ii<2; ii++){
-        arr[ii] = data.arr[ii];
+        *(arr+ii) = data.arr[ii];
     }
 }
 
@@ -60,7 +65,7 @@ void Pkt_pfm::uint32_t_to_arr(uint32_t val,
     union Pkt_uint32_t data;
     data.val = val;
     for(uint8_t ii=0; ii<4; ii++){
-        arr[ii] = data.arr[ii];
+        *(arr+ii) = data.arr[ii];
     }
 }
 
@@ -149,6 +154,30 @@ bool Pkt_pfm::cmd_get_delta_steps(uint8_t payload_size, uint8_t* payload, uint8_
 }
 
 
+bool Pkt_pfm::cmd_get_imu_measurement(uint8_t payload_size, uint8_t* return_array){
+    // check payload is correct size
+    if(payload_size == 0){
+        // locate value in payload
+        _imu->get_measured_data(&this->_imu_meas);
+        // fit measured data into return_array
+        uint16_t_to_arr(uint16_t(_imu_meas.ax), return_array+ 0);
+        uint16_t_to_arr(uint16_t(_imu_meas.ay), return_array+ 2);
+        uint16_t_to_arr(uint16_t(_imu_meas.az), return_array+ 4);
+        uint16_t_to_arr(uint16_t(_imu_meas.gx), return_array+ 6);
+        uint16_t_to_arr(uint16_t(_imu_meas.gy), return_array+ 8);
+        uint16_t_to_arr(uint16_t(_imu_meas.gz), return_array+10);
+        uint16_t_to_arr(uint16_t(_imu_meas.mx), return_array+12);
+        uint16_t_to_arr(uint16_t(_imu_meas.my), return_array+14);
+        uint16_t_to_arr(uint16_t(_imu_meas.mz), return_array+16);
+        // retrun true on success
+        return true;
+    }else{
+        // retrun false when something is wrong
+        return false;
+    }
+}
+
+
 bool Pkt_pfm::cmd_set_isr_freq(uint8_t payload_size, uint8_t* payload){
     // check payload is correct size
     if(payload_size == 2){
@@ -167,6 +196,7 @@ bool Pkt_pfm::cmd_set_isr_freq(uint8_t payload_size, uint8_t* payload){
     }
 }
 
+
 bool Pkt_pfm::cmd_get_isr_freq(uint8_t payload_size, uint8_t* return_array){
     // check payload is correct size
     if(payload_size == 0){
@@ -183,6 +213,7 @@ bool Pkt_pfm::cmd_get_isr_freq(uint8_t payload_size, uint8_t* return_array){
     }
 }
 
+
 bool Pkt_pfm::cmd_enable_cnc(uint8_t payload_size){
     // check payload is correct size
     if(payload_size == 0){
@@ -196,6 +227,7 @@ bool Pkt_pfm::cmd_enable_cnc(uint8_t payload_size){
         return false;
     }
 }
+
 
 bool Pkt_pfm::cmd_disable_cnc(uint8_t payload_size){
     // check payload is correct size
@@ -256,6 +288,10 @@ bool Pkt_pfm::process_command(uint8_t command, uint8_t payload_size, uint8_t* pa
         case CMD_GET_DELTA_STEPS:
             // command action here
             return cmd_get_delta_steps(payload_size, payload, return_array);
+            break;
+        case CMD_GET_IMU_MEASUREMENT:
+            // command action here
+            return cmd_get_imu_measurement(payload_size, return_array);
             break;
         case CMD_SET_ISR_FREQ:
             // command action here

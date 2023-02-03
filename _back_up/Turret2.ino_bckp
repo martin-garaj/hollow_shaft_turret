@@ -5,8 +5,22 @@
 
 // I AM SO CLOSE TO FINISHING THIS PROJECT
 
+void printHex(int num, int precision) {
+      char tmp[16];
+      char format[128];
+
+      sprintf(format, "%%.%dX", precision);
+
+      sprintf(tmp, format, num);
+      Serial.print(tmp);
+}
+
+
+// Below code is tested and works, try to connect motors next time.
+
 #include "pfm_cnc.hpp"
 #include "pfm_isr.h"
+#include "imu.hpp"
 #include "pkt_process_cmd.hpp"
 
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
@@ -17,26 +31,18 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 
-
-// class default I2C address is 0x68
-// specific I2C addresses may be passed as a parameter here
-// AD0 low = 0x68 (default for InvenSense evaluation board)
-// AD0 high = 0x69
-MPU6050 accelgyro;
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
-int16_t mx, my, mz;
-
-// Pfm_cnc Pfm = Pfm_cnc();
+Imu imu(MPU9250_DEFAULT_ADDRESS);
 Pfm_cnc Pfm;
-Pkt_pfm Pkt(&Pfm);
+Pkt_pfm Pkt(&Pfm, &imu);
 
 union Pkt_uint16_t {
     uint16_t val;
     uint8_t arr[2];
 };
 
-uint8_t return_buffer[4];
+uint8_t return_buffer[18];
+bool Pkt_correct = false;
+
 
 void setup()
 {
@@ -48,15 +54,13 @@ void setup()
   Serial.println("Running.");
   // delay(200);
 
-  // // IMU
-  // // join I2C bus (I2Cdev library doesn't do this automatically)
-  // Wire.begin();
-  // // initialize device
-  // Serial.println("Initializing I2C devices...");
-  // accelgyro.initialize();
-  // // verify connection
-  // Serial.println("Testing device connections...");
-  // Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+  // IMU
+  Wire.begin();
+  imu.initialize();
+
+  // get measuremens 
+  imu.perform_measurement();
+
 
   Pfm.init();
   // Pfm.init_memory();
@@ -66,7 +70,6 @@ void setup()
 // set initial direction and speed  
   // Pfm.set_target_freq(PFM_Y, 8, false);
 
-  bool Pkt_correct = false;
   uint8_t test_CMD_SET_TARGET_FREQ[4] = {0x0F, 0x00, 0xFF, 0x0F};
   Pkt_correct = Pkt.process_command(CMD_SET_TARGET_FREQ, 4, test_CMD_SET_TARGET_FREQ, return_buffer);
   if(Pkt_correct){Serial.print("Pkt correct \n");}else{Serial.print("Pkt INCORRECT \n");}
@@ -89,11 +92,15 @@ void setup()
   if(Pkt_correct){Serial.print("Pkt correct \n");}else{Serial.print("Pkt INCORRECT \n");}
   for (int i = 3; i > -1; i--) Serial.print(return_buffer[i], HEX); Serial.print("\n");
 
+  Pkt_correct = Pkt.process_command(CMD_GET_IMU_MEASUREMENT, 0, NULL, return_buffer);
+  if(Pkt_correct){Serial.print("Pkt correct \n");}else{Serial.print("Pkt INCORRECT \n");}
+  for (int i = 17; i > -1; i--) Serial.print(return_buffer[i], HEX); Serial.print("\n");
 
-  delay(5000);
-  Pkt_correct = Pkt.process_command(CMD_DISABLE_CNC, 0, NULL, NULL);
-  delay(2000);
-  Pkt_correct = Pkt.process_command(CMD_ENABLE_CNC, 0, NULL, NULL);
+
+  // delay(5000);
+  // Pkt_correct = Pkt.process_command(CMD_DISABLE_CNC, 0, NULL, NULL);
+  // delay(2000);
+  // Pkt_correct = Pkt.process_command(CMD_ENABLE_CNC, 0, NULL, NULL);
 
 
   Serial.print("init X \t");
@@ -119,6 +126,8 @@ void setup()
   Serial.print(int32_t(pfm[PFM_Z].pfm_direction)); Serial.print("\t");
   Serial.print(int32_t(pfm[PFM_Z].pfm_target_delta)); Serial.print("\t");
   Serial.print("\n");
+
+
 
 }
 
@@ -148,26 +157,13 @@ void loop()
   // Serial.print(int32_t(pfm[PFM_Y]._cnc_shield_step_pin)); Serial.print("\t");
   // Serial.print("\n");
 
-  // // read raw accel/gyro measurements from device
-  // int t1 = micros();
-  // accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-  // int t2 = micros();
+  Pkt_correct = Pkt.process_command(CMD_DISABLE_CNC, 0, NULL, NULL);
 
-  // // Serial.print("a/g/m:\t");
-  // // Serial.print(ax); Serial.print("\t");
-  // // Serial.print(ay); Serial.print("\t");
-  // // Serial.print(az); Serial.print("\t");
-  // // Serial.print(gx); Serial.print("\t");
-  // // Serial.print(gy); Serial.print("\t");
-  // // Serial.print(gz); Serial.print("\t");
-  // // Serial.print(mx); Serial.print("\t");
-  // // Serial.print(my); Serial.print("\t");
-  // // Serial.print(mz); Serial.print("\t");
-  // // Serial.print(t2-t1); Serial.print("\t");
-  // // Serial.print(float(Pfm.get_delta_steps(PFM_X))/1600.0, 10); Serial.print("\t");
-  // // Serial.print("\n");
+  imu.perform_measurement();
+  imu.perform_measurement();
+  imu.perform_measurement();
 
-
-  // // delay(100);
+  Pkt_correct = Pkt.process_command(CMD_GET_IMU_MEASUREMENT, 0, NULL, return_buffer);
+  for (int i = 17; i > -1; i--) printHex(return_buffer[i], 2); Serial.print("\n");
 
 }
