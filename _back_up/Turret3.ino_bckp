@@ -1,0 +1,295 @@
+// Continue writing the Command functions (translating packets into commands)
+// Then implement SerialTransfer and pySerialTransfer (already tested)
+// Lastly, work on the main loop, integrate sensors, 
+// serial communication and control into several high level commands.
+
+// I AM SO CLOSE TO FINISHING THIS PROJECT
+
+void printHex(int num, int precision) {
+      char tmp[16];
+      char format[128];
+
+      sprintf(format, "%%.%dX", precision);
+
+      sprintf(tmp, format, num);
+      Serial.print(tmp);
+}
+
+
+// Below code is tested and works, try to connect motors next time.
+
+#include "pfm_cnc.hpp"
+#include "pfm_isr.h"
+#include "imu.hpp"
+#include "pkt_process_cmd.hpp"
+
+// Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
+// is used in I2Cdev.h
+#include "Wire.h"
+// I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
+// for both classes must be in the include path of your project
+#include "I2Cdev.h"
+#include "MPU6050.h"
+
+Imu imu(MPU9250_DEFAULT_ADDRESS);
+Pfm_cnc Pfm;
+Pkt_pfm Pkt(&Pfm, &imu);
+
+union Pkt_uint16_t {
+    uint16_t val;
+    uint8_t arr[2];
+};
+
+uint8_t return_buffer[18];
+bool Pkt_correct = false;
+
+
+#define START_BYTE_0 0x01
+#define START_BYTE_1 0x01
+#define END_BYTE_0 0x04
+#define END_BYTE_0 0x04
+// Define the maximum size of the serial input buffer
+#define SERIAL_BUFFER_SIZE 128
+
+
+uint16_t encode_message(uint8_t *payload, uint8_t payload_size, uint8_t *message) {
+    // Start bytes
+    message[0] = 0xAA;
+    message[1] = 0xBB;
+    // Payload size (1 byte)
+    message[2] = payload_size;
+    // Payload
+    memcpy(&message[3], payload, payload_size);
+    // Ending bytes
+    message[3+payload_size] = 0xCC;
+    message[4+payload_size] = 0xDD;
+    // return 
+    return payload_size+5;
+}
+
+
+uint16_t decode_message(uint8_t *data, uint16_t data_length, uint8_t *payload) {
+    uint16_t start_index = 0;
+    while (start_index < data_length-1) {
+        // Find the start bytes
+        if (data[start_index] == 0xAA && data[start_index+1] == 0xBB) {
+            break;
+        }
+        start_index++;
+    }
+    if (start_index >= data_length-1) {
+        // Start bytes not found, invalid message
+        return 0;
+    }
+    uint16_t end_index = start_index+2;
+    while (end_index < data_length-1) {
+        // Find the ending bytes
+        if (data[end_index] == 0xCC && data[end_index+1] == 0xDD) {
+            break;
+        }
+        end_index++;
+    }
+    if (end_index >= data_length-1) {
+        // Ending bytes not found, invalid message
+        return 0;
+    }
+    // Extract the payload size (1 byte)
+    uint8_t payload_size = data[start_index+2];
+    if (end_index-start_index-3 != payload_size) {
+        // Payload size does not match actual payload size, invalid message
+        return 0;
+    }
+    if (payload_size > 0) {
+        memcpy(payload, data+start_index+3, payload_size);
+    }
+    // Return the total length of the message, including start and ending bytes
+    return end_index-start_index+2;
+}
+
+// uint16_t detect_packet(uint8_t *buffer, uint16_t buffer_length, uint8_t *packet_in) {
+//     uint16_t start_index = 0;
+//     while (start_index < buffer_length-1) {
+//         // Find the start bytes
+//         if (buffer[start_index] == 0xAA && buffer[start_index+1] == 0xBB) {
+//             break;
+//         }
+//         start_index++;
+//     }
+//     if (start_index >= buffer_length-1) {
+//         // Start bytes not found, invalid message
+//         return 0;
+//     }
+//     uint16_t end_index = start_index+2;
+//     while (end_index < buffer_length-1) {
+//         // Find the ending bytes
+//         if (buffer[end_index] == 0xCC && buffer[end_index+1] == 0xDD) {
+//             break;
+//         }
+//         end_index++;
+//     }
+//     if (end_index >= buffer_length-1) {
+//         // Ending bytes not found, invalid message
+//         return 0;
+//     }
+//     // Extract the payload size (1 byte)
+//     uint8_t payload_size = buffer[start_index+2];
+//     if (end_index-start_index-3 != payload_size) {
+//         // Payload size does not match actual payload size, invalid message
+//         return 0;
+//     }
+//     if (payload_size > 0) {
+//         memcpy(packet_in, buffer+start_index+3, payload_size);
+//     }
+//     // Return the total length of the message, including start and ending bytes
+//     return end_index-start_index+2;
+// }
+
+
+uint16_t return_array_size;
+
+void setup()
+{
+  Serial.begin(115200);
+  while (!Serial) 
+  { 
+    ; // Wait for serial to connect 
+  }
+  Serial.println("Running.");
+  // delay(200);
+
+  // IMU
+  Wire.begin();
+  imu.initialize();
+
+  // get measuremens 
+  imu.perform_measurement();
+
+  Pfm.init();
+  Pfm.enable_cnc();
+
+  uint8_t test_CMD_SET_TARGET_FREQ[4] = {0x0F, 0x00, 0xFF, 0x0F};
+  Pkt_correct = Pkt.process_command(CMD_SET_TARGET_FREQ, 4, test_CMD_SET_TARGET_FREQ, &return_array_size,return_buffer);
+  if(Pkt_correct){Serial.print("Pkt correct \n");}else{Serial.print("Pkt INCORRECT \n");}
+
+  uint8_t test_CMD_SET_ISR_FREQ[7] = {0x19, 0x00}; // 6400
+  // uint8_t test_CMD_SET_ISR_FREQ[7] = {0x12, 0xC0}; // 3200
+  Pkt_correct = Pkt.process_command(CMD_SET_ISR_FREQ, 2, test_CMD_SET_ISR_FREQ, &return_array_size, NULL);
+  if(Pkt_correct){Serial.print("Pkt correct \n");}else{Serial.print("Pkt INCORRECT \n");}
+
+  Serial.print("init X \t");
+  Serial.print(int32_t(pfm[PFM_X]._isr_pfm_counter)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_X].pfm_delta_steps)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_X].pfm_target_freq)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_X].pfm_direction)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_X].pfm_target_delta)); Serial.print("\t");
+  Serial.print("\n");
+
+  Serial.print("init Y \t");
+  Serial.print(int32_t(pfm[PFM_Y]._isr_pfm_counter)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Y].pfm_delta_steps)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Y].pfm_target_freq)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Y].pfm_direction)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Y].pfm_target_delta)); Serial.print("\t");
+  Serial.print("\n");
+
+  Serial.print("init Z \t");
+  Serial.print(int32_t(pfm[PFM_Z]._isr_pfm_counter)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Z].pfm_delta_steps)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Z].pfm_target_freq)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Z].pfm_direction)); Serial.print("\t");
+  Serial.print(int32_t(pfm[PFM_Z].pfm_target_delta)); Serial.print("\t");
+  Serial.print("\n");
+}
+
+// keeps raw incomming serial trafic
+uint8_t serial_buffer[SERIAL_BUFFER_SIZE];
+uint16_t serial_buffer_length = 0;
+// buffer of a message to be sent
+uint8_t message[SERIAL_BUFFER_SIZE];
+uint16_t message_size = 0;
+// received/sent payload
+uint8_t payload[SERIAL_BUFFER_SIZE];
+uint16_t payload_size = 0;
+
+
+uint8_t packet_in[SERIAL_BUFFER_SIZE];
+uint16_t packet_in_size = 0;
+
+uint16_t command_payload_size = 0;
+bool command_received;
+
+
+// command return array
+// uint8_t return_array[SERIAL_BUFFER_SIZE];
+
+
+// State machine related
+bool packet_end_detected;
+bool command_success;
+// Messaging variables
+uint8_t command_type;
+uint8_t* command_payload;
+uint16_t packet_out_size;
+uint16_t output_size;
+uint8_t output[SERIAL_BUFFER_SIZE];
+uint8_t packet_out[SERIAL_BUFFER_SIZE];
+
+//*** MAIN OOP ***//
+void loop() {
+
+  // Check if there is any data available on the serial port
+  if (Serial.available() > 0) {
+    serial_buffer[serial_buffer_length] = Serial.read();
+    if (serial_buffer_length < SERIAL_BUFFER_SIZE) {
+      serial_buffer_length++;
+    }else{
+      // when overflow, reset pointer to buffer
+      serial_buffer_length=0;
+    }
+    
+    // look for the end of a packet
+    packet_end_detected = serial_buffer[serial_buffer_length-2] == 0xCC && serial_buffer[serial_buffer_length-1] == 0xDD;
+    if (packet_end_detected) {
+      // detect packat_in and its size
+      packet_in_size = decode_message(serial_buffer, serial_buffer_length, &packet_in[0]);
+
+      if (packet_in_size > 0) {
+        
+        // separate command
+        command_type = packet_in[0];
+        // separate command payload
+        command_payload = &packet_in[1];
+        command_payload_size = packet_in_size-6;
+        // process command
+        command_success = Pkt.process_command(command_type, command_payload_size, command_payload, &output_size, &output[1]);
+        
+        if (command_success) {
+          if (output_size > 0){
+            // response is returned
+            output[0] = command_type;
+            packet_out_size = encode_message(output, output_size+1, packet_out);
+          }else{
+            // ACK is returned
+            packet_out[0] = 0xAA;
+            packet_out_size = encode_message(payload, 1, packet_out);          
+          }
+        }else{
+          // NACK is returned
+          packet_out[0] = 0xAB; 
+          packet_out_size = encode_message(payload, 1, packet_out);
+        }
+
+        Serial.write(packet_out, packet_out_size);
+        Serial.println();
+
+        // when command processed, reset pointer to buffer (write over previous values)
+        serial_buffer_length=0;
+      } // if (packet_in_size > 0)
+        // Execution gets here only if FALSE packet end was detected.
+        // This is not dangerous and the program should continue 
+        // execution as usual.
+    } // if (packet_end_detected)
+  }
+
+  imu.perform_measurement();
+}

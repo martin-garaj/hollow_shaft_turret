@@ -132,7 +132,7 @@ bool Pkt_pfm::cmd_set_target_delta(uint8_t payload_size, uint8_t* payload){
 }
 
 
-bool Pkt_pfm::cmd_get_delta_steps(uint8_t payload_size, uint8_t* payload, uint8_t* return_array){
+bool Pkt_pfm::cmd_get_delta_steps(uint8_t payload_size, uint8_t* payload, uint16_t* return_array_size, uint8_t* return_array){
     // check payload is correct size
     if(payload_size == 1){
         // locate value in payload
@@ -146,15 +146,17 @@ bool Pkt_pfm::cmd_get_delta_steps(uint8_t payload_size, uint8_t* payload, uint8_
             }
         }
         // retrun true on success
+        *return_array_size = 4;
         return true;
     }else{
         // retrun false when something is wrong
+        *return_array_size = 0;
         return false;
     }
 }
 
 
-bool Pkt_pfm::cmd_get_imu_measurement(uint8_t payload_size, uint8_t* return_array){
+bool Pkt_pfm::cmd_get_imu_measurement(uint8_t payload_size, uint16_t* return_array_size, uint8_t* return_array){
     // check payload is correct size
     if(payload_size == 0){
         // locate value in payload
@@ -170,9 +172,11 @@ bool Pkt_pfm::cmd_get_imu_measurement(uint8_t payload_size, uint8_t* return_arra
         uint16_t_to_arr(uint16_t(_imu_meas.my), return_array+14);
         uint16_t_to_arr(uint16_t(_imu_meas.mz), return_array+16);
         // retrun true on success
+        *return_array_size = 18;
         return true;
     }else{
         // retrun false when something is wrong
+        *return_array_size = 0;
         return false;
     }
 }
@@ -197,7 +201,7 @@ bool Pkt_pfm::cmd_set_isr_freq(uint8_t payload_size, uint8_t* payload){
 }
 
 
-bool Pkt_pfm::cmd_get_isr_freq(uint8_t payload_size, uint8_t* return_array){
+bool Pkt_pfm::cmd_get_isr_freq(uint8_t payload_size, uint16_t* return_array_size, uint8_t* return_array){
     // check payload is correct size
     if(payload_size == 0){
         //  
@@ -206,9 +210,11 @@ bool Pkt_pfm::cmd_get_isr_freq(uint8_t payload_size, uint8_t* return_array){
         uint16_t_to_arr(uint16_t(_pfm_cnc->get_isr_freq()), 
                                         return_array);
         // retrun true on success
+        *return_array_size = 4;
         return true;
     }else{
         // retrun false when something is wrong
+        *return_array_size = 0;
         return false;
     }
 }
@@ -274,44 +280,41 @@ bool Pkt_pfm::cmd_set_delta_steps(uint8_t payload_size, uint8_t* payload){
 }
 
 
-bool Pkt_pfm::process_command(uint8_t command, uint8_t payload_size, uint8_t* payload, uint8_t* return_array){
+bool Pkt_pfm::process_command(uint8_t command, uint8_t payload_size, uint8_t* payload, uint16_t* return_array_size, uint8_t* return_array){
     switch (command)
     {
         case CMD_SET_TARGET_FREQ:
-            // command action here
+            *return_array_size = 0;
             return cmd_set_target_freq(payload_size, payload);
             break;
         case CMD_SET_TARGET_DELTA:
-            // command action here
+            *return_array_size = 0;
             return cmd_set_target_delta(payload_size, payload);
             break;
         case CMD_GET_DELTA_STEPS:
-            // command action here
-            return cmd_get_delta_steps(payload_size, payload, return_array);
+            return cmd_get_delta_steps(payload_size, payload, return_array_size, return_array);
             break;
         case CMD_GET_IMU_MEASUREMENT:
-            // command action here
-            return cmd_get_imu_measurement(payload_size, return_array);
+            return cmd_get_imu_measurement(payload_size, return_array_size, return_array);
             break;
         case CMD_SET_ISR_FREQ:
-            // command action here
+            *return_array_size = 0;
             return cmd_set_isr_freq(payload_size, payload);
             break;
         case CMD_ENABLE_CNC:
-            // command action here
+            *return_array_size = 0;
             return cmd_enable_cnc(payload_size);
             break;
         case CMD_DISABLE_CNC:
-            // command action here
+            *return_array_size = 0;
             return cmd_disable_cnc(payload_size);
             break;
         case CMD_SET_DELTA_STEPS:
-            // command action here
+            *return_array_size = 0;
             return cmd_set_delta_steps(payload_size, payload);
             break;
         case CMD_GET_ISR_FREQ:
-            // command action here
-            return cmd_get_isr_freq(payload_size, return_array);
+            return cmd_get_isr_freq(payload_size, return_array_size, return_array);
             break;
         // case CMD_STOP:
         //     // command action here

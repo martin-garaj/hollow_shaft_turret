@@ -11,10 +11,10 @@ private:
     imu_regs    _imu_meas;
     bool        cmd_set_target_freq(    uint8_t payload_size,   uint8_t* payload                            );
     bool        cmd_set_target_delta(   uint8_t payload_size,   uint8_t* payload                            );
-    bool        cmd_get_delta_steps(    uint8_t payload_size,   uint8_t* payload,   uint8_t* return_array   );
+    bool        cmd_get_delta_steps(    uint8_t payload_size,   uint8_t* payload,   uint16_t* return_array_size,    uint8_t* return_array   );
     bool        cmd_set_isr_freq(       uint8_t payload_size,   uint8_t* payload                            );
-    bool        cmd_get_imu_measurement(uint8_t payload_size,                       uint8_t* return_array   );
-    bool        cmd_get_isr_freq(       uint8_t payload_size,                       uint8_t* return_array   );
+    bool        cmd_get_imu_measurement(uint8_t payload_size,                       uint16_t* return_array_size,    uint8_t* return_array   );
+    bool        cmd_get_isr_freq(       uint8_t payload_size,                       uint16_t* return_array_size,    uint8_t* return_array   );
     bool        cmd_enable_cnc(         uint8_t payload_size                                                );
     bool        cmd_disable_cnc(        uint8_t payload_size                                                );
     bool        cmd_set_delta_steps(    uint8_t payload_size,   uint8_t* payload                            );
@@ -25,5 +25,5 @@ private:
     void        uint32_t_to_arr(        uint32_t val, uint8_t* arr      );
 public:
     Pkt_pfm(Pfm_cnc* pfm_cnc, Imu* imu);
-    bool        process_command(uint8_t command, uint8_t payload_size, uint8_t* payload, uint8_t* return_array);
+    bool        process_command(uint8_t command, uint8_t payload_size, uint8_t* payload, uint16_t* return_array_size, uint8_t* return_array);
 };
