@@ -255,10 +255,10 @@ bool Pkt_pfm::cmd_set_delta_steps(uint8_t payload_size, uint8_t* payload){
         // locate value in payload
         uint8_t bit_flags_target_pfm = payload[0];
         // translate array[2] of uint8_t into uint16_t
-        uint32_t pfm_delta_steps = arr_to_uint32_t(payload[3], 
+        uint32_t pfm_delta_steps = arr_to_uint32_t(payload[4], 
+                                                    payload[3], 
                                                     payload[2], 
-                                                    payload[1], 
-                                                    payload[0]);
+                                                    payload[1]);
 
         // execute the command (for every targeted pfm)
         // NOTICE: ISR is ignored to assure synchronized execution among PFMs
