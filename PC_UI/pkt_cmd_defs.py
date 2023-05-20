@@ -17,3 +17,5 @@ PKT_ACK                 = bytes.fromhex('AA') # acknowledgement sequence
 PKT_NACK                = bytes.fromhex('AB') # not-acknowledgement sequence
 
 BYTEORDER = 'little'
+PAYLOAD_BYTE_SIZE = 1
+COMMAND_BYTE_SIZE = 1

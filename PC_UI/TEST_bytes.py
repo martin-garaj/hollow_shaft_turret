@@ -9,3 +9,17 @@ _integer_k = int.from_bytes(bytes=bytes_k, byteorder=byteorder, signed=False)
 print(integer_k)
 print(bytes_k)
 print(_integer_k)
+
+import time
+
+print(time.time())
+
+
+import collections
+
+d = collections.deque(maxlen=10)
+for i in range(20):
+    d.append((time.time(), i))
+    
+print(d[0])
+print(d[-1])

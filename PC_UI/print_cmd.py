@@ -7,7 +7,6 @@ and the command constants are defined in pkt_cmd_defs.h
 """
 
 from pkt_cmd_defs import *
-from pkt_ack_defs import *
 
 def encode_pfm_flag(PFM_X_FLAG:bool=False, PFM_Y_FLAG:bool=False, PFM_Z_FLAG:bool=False, PFM_Q_FLAG:bool=False):
     pmf_flag = 0b000
