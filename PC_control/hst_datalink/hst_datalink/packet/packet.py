@@ -107,8 +107,8 @@ def check_packet_complete(expected_packet:bytearray):
     payload_size_bytes = expected_packet[len(START_BYTES):len(START_BYTES)+PAYLOAD_BYTE_SIZE]
     message_size = bytearray_to_int(bytearray_int=payload_size_bytes) + PAYLOAD_BYTE_SIZE
     if message_size == len(expected_packet)-len(START_BYTES)-len(END_BYTES):
-        message = expected_packet[len(START_BYTES)+PAYLOAD_BYTE_SIZE:len(START_BYTES)+message_size]
-        return True, message
+        payload = expected_packet[len(START_BYTES)+PAYLOAD_BYTE_SIZE:len(START_BYTES)+message_size]
+        return True, payload
     else:
         # false start and/or end of packet
         return False, bytearray()
@@ -146,11 +146,11 @@ def parse_buffer(buffer:bytearray):
     for packet_start_idx in packet_start_idxs:
         for packet_end_idx in packet_end_idxs:
             expected_packet = buffer[packet_start_idx:packet_end_idx+len(END_BYTES)]
-            packet_detected, message = check_packet_complete(expected_packet)
+            packet_detected, payload = check_packet_complete(expected_packet)
             if packet_detected:
                 # remove the packet from the buffer
                 buffer = buffer[packet_end_idx+len(END_BYTES):]
-                return buffer, message
+                return buffer, payload
             else:
                 # continue the search
                 pass

@@ -31,33 +31,33 @@ def decode_pfm_flag(pmf_flag):
 
 def packet_outgoing_to_dict(command, payload):
     info = dict()
-    # command_int = int.from_bytes(command, byteorder=Datalink.pkt.BYTEORDER)
-    if command == int.from_bytes(Datalink.pkt.CMD_SET_TARGET_FREQ, byteorder=Datalink.pkt.BYTEORDER):
+    # command_int = int.from_bytes(command, byteorder=Datalink.const.BYTEORDER)
+    if command == int.from_bytes(Datalink.const.CMD_SET_TARGET_FREQ, byteorder=Datalink.const.BYTEORDER):
         info['CMD'] = 'CMD_SET_TARGET_FREQ'
         info.update(decode_pfm_flag(payload[0]))
-        info['FREQ'] = int.from_bytes(payload[1:3], byteorder=Datalink.pkt.BYTEORDER)
+        info['FREQ'] = int.from_bytes(payload[1:3], byteorder=Datalink.const.BYTEORDER)
         info['DIR'] = bool(payload[3])
-    elif command == int.from_bytes(Datalink.pkt.CMD_SET_TARGET_DELTA, byteorder=Datalink.pkt.BYTEORDER):
+    elif command == int.from_bytes(Datalink.const.CMD_SET_TARGET_DELTA, byteorder=Datalink.const.BYTEORDER):
         info['CMD'] = 'CMD_SET_TARGET_DELTA'
         info.update(decode_pfm_flag(payload[0]))
-        info['FREQ'] = int.from_bytes(payload[1:3], byteorder=Datalink.pkt.BYTEORDER)
-        info['DELTA'] = int.from_bytes(payload[3:7], byteorder=Datalink.pkt.BYTEORDER)
-    elif command == int.from_bytes(Datalink.pkt.CMD_GET_DELTA_STEPS, byteorder=Datalink.pkt.BYTEORDER):
+        info['FREQ'] = int.from_bytes(payload[1:3], byteorder=Datalink.const.BYTEORDER)
+        info['DELTA'] = int.from_bytes(payload[3:7], byteorder=Datalink.const.BYTEORDER)
+    elif command == int.from_bytes(Datalink.const.CMD_GET_DELTA_STEPS, byteorder=Datalink.const.BYTEORDER):
         info['CMD'] = 'CMD_GET_DELTA_STEPS'
         info.update(decode_pfm_flag(payload[0]))
-    elif command == int.from_bytes(Datalink.pkt.CMD_GET_IMU_MEASUREMENT, byteorder=Datalink.pkt.BYTEORDER):
+    elif command == int.from_bytes(Datalink.const.CMD_GET_IMU_MEASUREMENT, byteorder=Datalink.const.BYTEORDER):
         info['CMD'] = 'CMD_GET_IMU_MEASUREMENT'
-    elif command == int.from_bytes(Datalink.pkt.CMD_SET_ISR_FREQ, byteorder=Datalink.pkt.BYTEORDER):
+    elif command == int.from_bytes(Datalink.const.CMD_SET_ISR_FREQ, byteorder=Datalink.const.BYTEORDER):
         info['CMD'] = 'CMD_SET_ISR_FREQ'
-        info['ISR_FREQ'] = int.from_bytes(payload[0:2], byteorder=Datalink.pkt.BYTEORDER)
-    elif command == int.from_bytes(Datalink.pkt.CMD_ENABLE_CNC, byteorder=Datalink.pkt.BYTEORDER):
+        info['ISR_FREQ'] = int.from_bytes(payload[0:2], byteorder=Datalink.const.BYTEORDER)
+    elif command == int.from_bytes(Datalink.const.CMD_ENABLE_CNC, byteorder=Datalink.const.BYTEORDER):
         info['CMD'] = 'CMD_ENABLE_CNC'
-    elif command == int.from_bytes(Datalink.pkt.CMD_DISABLE_CNC, byteorder=Datalink.pkt.BYTEORDER):
+    elif command == int.from_bytes(Datalink.const.CMD_DISABLE_CNC, byteorder=Datalink.const.BYTEORDER):
         info['CMD'] = 'CMD_DISABLE_CNC'
-    elif command == int.from_bytes(Datalink.pkt.CMD_SET_DELTA_STEPS, byteorder=Datalink.pkt.BYTEORDER):
+    elif command == int.from_bytes(Datalink.const.CMD_SET_DELTA_STEPS, byteorder=Datalink.const.BYTEORDER):
         info['CMD'] = 'CMD_SET_DELTA_STEPS'
         info.update(decode_pfm_flag(payload[0]))
-        info['DELTA'] = int.from_bytes(payload[1:5], byteorder=Datalink.pkt.BYTEORDER)
+        info['DELTA'] = int.from_bytes(payload[1:5], byteorder=Datalink.const.BYTEORDER)
     else:
         raise ValueError(f"command={command}, invalid value.")
     return info
@@ -65,42 +65,42 @@ def packet_outgoing_to_dict(command, payload):
     
 def packet_incoming_to_dict(command, payload):
     info = dict()
-    if command == Datalink.pkt.CMD_SET_TARGET_FREQ:
+    if command == Datalink.const.CMD_SET_TARGET_FREQ:
         info['CMD'] = 'CMD_SET_TARGET_FREQ'
-        info['ACK'] = True if int(payload[0])==int.from_bytes(Datalink.pkt.PKT_ACK, byteorder=Datalink.pkt.BYTEORDER) else False
-    elif command == Datalink.pkt.CMD_SET_TARGET_DELTA:
+        info['ACK'] = True if int(payload[0])==int.from_bytes(Datalink.const.PKT_ACK, byteorder=Datalink.const.BYTEORDER) else False
+    elif command == Datalink.const.CMD_SET_TARGET_DELTA:
         info['CMD'] = 'CMD_SET_TARGET_DELTA'
-        info['ACK'] = True if int(payload[0])==int.from_bytes(Datalink.pkt.PKT_ACK, byteorder=Datalink.pkt.BYTEORDER) else False
-    elif command == Datalink.pkt.CMD_GET_DELTA_STEPS:
+        info['ACK'] = True if int(payload[0])==int.from_bytes(Datalink.const.PKT_ACK, byteorder=Datalink.const.BYTEORDER) else False
+    elif command == Datalink.const.CMD_GET_DELTA_STEPS:
         info['CMD'] = 'CMD_GET_DELTA_STEPS'
         if len(payload) > 1:
-            info['DELTA'] = int.from_bytes(payload[0:4], byteorder=Datalink.pkt.BYTEORDER)
+            info['DELTA'] = int.from_bytes(payload[0:4], byteorder=Datalink.const.BYTEORDER)
         else:
-            info['ACK'] = False if int(payload[0])==int.from_bytes(Datalink.pkt.PKT_NACK, byteorder=Datalink.pkt.BYTEORDER) else 'ERROR'
-    elif command == Datalink.pkt.CMD_GET_IMU_MEASUREMENT:
+            info['ACK'] = False if int(payload[0])==int.from_bytes(Datalink.const.PKT_NACK, byteorder=Datalink.const.BYTEORDER) else 'ERROR'
+    elif command == Datalink.const.CMD_GET_IMU_MEASUREMENT:
         info['CMD'] = 'CMD_GET_DELTA_STEPS'
         if len(payload) > 1:
             for idx, value_type in enumerate(['AX', 'AY', 'AZ', 'GX', 'GY', 'GZ', 'MX', 'MY', 'MZ']):
                 val_start = idx*2
                 val_end = val_start+2
-                info[value_type] = int.from_bytes(payload[val_start:val_end], byteorder=Datalink.pkt.BYTEORDER)
+                info[value_type] = int.from_bytes(payload[val_start:val_end], byteorder=Datalink.const.BYTEORDER)
         else:
-            info['ACK'] = False if int(payload[0])==int.from_bytes(Datalink.pkt.PKT_NACK, byteorder=Datalink.pkt.BYTEORDER) else 'ERROR'
-    elif command == Datalink.pkt.CMD_SET_ISR_FREQ:
+            info['ACK'] = False if int(payload[0])==int.from_bytes(Datalink.const.PKT_NACK, byteorder=Datalink.const.BYTEORDER) else 'ERROR'
+    elif command == Datalink.const.CMD_SET_ISR_FREQ:
         info['CMD'] = 'CMD_SET_ISR_FREQ'
         if len(payload) > 1:
-            info['ISR_FREQ'] = int.from_bytes(payload[0:2], byteorder=Datalink.pkt.BYTEORDER)
+            info['ISR_FREQ'] = int.from_bytes(payload[0:2], byteorder=Datalink.const.BYTEORDER)
         else:
-            info['ACK'] = False if int(payload[0])==int.from_bytes(Datalink.pkt.PKT_NACK, byteorder=Datalink.pkt.BYTEORDER) else 'ERROR'
-    elif command == Datalink.pkt.CMD_ENABLE_CNC:
+            info['ACK'] = False if int(payload[0])==int.from_bytes(Datalink.const.PKT_NACK, byteorder=Datalink.const.BYTEORDER) else 'ERROR'
+    elif command == Datalink.const.CMD_ENABLE_CNC:
         info['CMD'] = 'CMD_ENABLE_CNC'
-        info['ACK'] = True if int(payload[0])==int.from_bytes(Datalink.pkt.PKT_ACK, byteorder=Datalink.pkt.BYTEORDER) else False
-    elif command == Datalink.pkt.CMD_DISABLE_CNC:
+        info['ACK'] = True if int(payload[0])==int.from_bytes(Datalink.const.PKT_ACK, byteorder=Datalink.const.BYTEORDER) else False
+    elif command == Datalink.const.CMD_DISABLE_CNC:
         info['CMD'] = 'CMD_DISABLE_CNC'
-        info['ACK'] = True if int(payload[0])==int.from_bytes(Datalink.pkt.PKT_ACK, byteorder=Datalink.pkt.BYTEORDER) else False
-    elif command == Datalink.pkt.CMD_SET_DELTA_STEPS:
+        info['ACK'] = True if int(payload[0])==int.from_bytes(Datalink.const.PKT_ACK, byteorder=Datalink.const.BYTEORDER) else False
+    elif command == Datalink.const.CMD_SET_DELTA_STEPS:
         info['CMD'] = 'CMD_SET_DELTA_STEPS'
-        info['ACK'] = True if int(payload[0])==int.from_bytes(Datalink.pkt.PKT_ACK, byteorder=Datalink.pkt.BYTEORDER) else False
+        info['ACK'] = True if int(payload[0])==int.from_bytes(Datalink.const.PKT_ACK, byteorder=Datalink.const.BYTEORDER) else False
     else:
         raise ValueError(f"command={command}, invalid value.")
     return info
@@ -131,7 +131,7 @@ def cmd_dict_to_str(cmd_dict:dict):
 
 # if __name__ == '__main__':
     
-#     Datalink.pkt.BYTEORDER = 'little'
+#     Datalink.const.BYTEORDER = 'little'
 
 #     payload = bytearray([
 #                 1, # payload: which pfm

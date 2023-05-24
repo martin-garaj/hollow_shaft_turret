@@ -216,7 +216,7 @@ void loop() {
         }
 
         Serial.write(packet_out, packet_out_size);
-        Serial.println();
+        // Serial.println();
 
         // when command processed, reset pointer to buffer (write over previous values)
         serial_buffer_length=0;

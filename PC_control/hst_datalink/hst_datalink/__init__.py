@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 # Create console handler and set level to INFO
 console_handler = logging.StreamHandler()
 # Create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('{asctime} - {name:<34s} - {levelname:<8s} - {message}', style='{')
 # Add formatter to console handler
 console_handler.setFormatter(formatter)
 # Add console handler to logger

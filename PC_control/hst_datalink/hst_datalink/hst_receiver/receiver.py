@@ -3,7 +3,6 @@ import collections
 import time
 from PyQt5.QtCore import QObject, pyqtSignal
 from ..packet import parse_buffer
-from ..packet import parse_message
 
 import logging
 
@@ -49,12 +48,12 @@ class Receiver(QObject):
                 packet_detected = True
                 while packet_detected:
                     # Detect packet
-                    self._buffer, message = parse_buffer(self._buffer)
-                    self._logger.debug(f"Receiver.run() message: '{message}'")
+                    self._buffer, payload = parse_buffer(self._buffer)
+                    self._logger.debug(f"Receiver.run() payload: '{payload}'")
                     # Parse packet
-                    if len(message) > 0:
+                    if len(payload) > 0:
                         packet_detected = True
-                        self.list_messages.append({'time':time.time(), 'payload':parse_message(message)})
+                        self.list_messages.append({'time':time.time(), 'payload':payload})
                         self._logger.debug(f"Receiver.run()->self.list_messages.append({self.list_messages[-1]})")
                     else:
                         packet_detected = False

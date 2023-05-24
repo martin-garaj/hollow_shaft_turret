@@ -7,7 +7,6 @@ from .hst_receiver import Receiver
 from .packet import pkt_defs
 from .packet.packet import parse_buffer
 from .packet.packet import encode_packet
-
 import logging
 
 
@@ -23,9 +22,9 @@ class Datalink():
     """     
     
     # _thread_receiver=None
-    pkt = pkt_defs
-    parse_buffer=parse_buffer
-    encode_packet=encode_packet    
+    const = pkt_defs
+    # parse_buffer=parse_buffer
+    # encode_packet=encode_packet 
     
     def __init__(self, port, baudrate):
         self._logger = logging.getLogger(__name__)
@@ -88,7 +87,8 @@ class Datalink():
                 if self._receiver.list_messages[-1]['time'] > since_time:
                     self._logger.debug(f"DataLink.receive(since_time={since_time}, timeout_seconds={timeout_seconds}, polling_period={polling_period})")
                     self._logger.info(f"DataLink.receive(...) -> True, '{self._receiver.list_messages[-1]['payload']}'")
-                    return True, self._receiver.list_messages[-1]['payload']
+                    payload = self._receiver.list_messages[-1]['payload']
+                    return True, payload
             except IndexError:
                 pass
             
