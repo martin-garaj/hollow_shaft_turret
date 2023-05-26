@@ -23,3 +23,12 @@ for i in range(20):
     
 print(d[0])
 print(d[-1])
+
+
+def fun(a, b, c=0):
+    print(f"{a}-{b}-{c}")
+
+# d = {'a':1, 'b':2, 'd':1}
+d = {'a':1, 'b':2}
+
+fun(**d)

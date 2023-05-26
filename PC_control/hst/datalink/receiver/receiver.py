@@ -8,16 +8,22 @@ import logging
 
 class Receiver(QObject):
     """
-    DOES: Runs in a separate thread, listening to incoming stream.
+    This object represetns a separated thread independently listening to 
+    incoming serial communication. The incoming data are stored in rotary buffer
+    self.list_messages (the last message is the latest message).
 
-    :param QObject: _description_
-    :type QObject: _type_
     :return: _description_
     :rtype: _type_
     """
     _interthread_signal = pyqtSignal(bytearray)
     _counter=0
     def __init__(self, serial):
+        """
+        Initializes the Receiver class with a instantiated serial connection obejct.
+
+        :param serial: Instantiated setial connection object.
+        :type serial: serial.Serial
+        """
         super().__init__()
         self._logger = logging.getLogger(__name__)
         self._logger.info(f"Receiver.__init__(serial={serial.name})")
@@ -29,13 +35,17 @@ class Receiver(QObject):
             
 
     def __del__(self):
+        """
+        Destructor for the Receiver class.
+        """
         self._logger.info(f"Receiver.__del__()")
 
+
     def run(self):
-        """ Reads the incomming serial communication. 
+        """ Runs in a separate thread, reads the incomming serial communication.
         
-        If responsible for detecting the packets and managing the buffer storing 
-        raw incoming serial communication.
+        It is responsible for detecting the packets and managing the buffer 
+        storing raw incoming serial communication.
         
         """
         self._logger.info(f"Receiver.run() executed")

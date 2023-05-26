@@ -1,5 +1,4 @@
 
-
 import serial
 import time
 from PyQt5.QtCore import QThread
@@ -10,16 +9,19 @@ import logging
 
 class Datalink():
     """
-    DOES: Handles Packet level communication.
-    DOESN'T: Examines the content of packets, except packet consistency.
-
-    :param QObject: _description_
-    :type QObject: _type_
-    :return: _description_
-    :rtype: _type_
+    Datalink class handles packet-level communication. For packet definition 
+    and terminology refer to packet.packet.
     """     
     
     def __init__(self, port, baudrate):
+        """
+        Initializes the Datalink object.
+
+        :param port: The port to be used for the serial connection.
+        :type port: str
+        :param baudrate: The baudrate to be used for the serial connection.
+        :type baudrate: int
+        """
         self._logger = logging.getLogger(__name__)
         self._logger.info(f"DataLink.__init__(port={port}, baudrate={baudrate})")
         self._serial = serial.Serial(port, baudrate)
@@ -35,6 +37,10 @@ class Datalink():
         
         
     def __del__(self):
+        """
+        Deletes the Datalink object, closing the serial connection and 
+        stopping the receiver thread.
+        """
         self._logger.info(f"DataLink.__del__()")
         if hasattr(self, '_thread_receiver'):
             self._thread_receiver.quit()
@@ -47,10 +53,11 @@ class Datalink():
         
     
     def _update_list_messages(self, message):
-        """_summary_
+        """
+        Updates the list of messages with the received message.
 
-        :param packet: _description_
-        :type packet: _type_
+        :param message: The received message.
+        :type message: str
         """
         receive_time = time.time()
         self.list_messages.append({
@@ -61,17 +68,41 @@ class Datalink():
 
 
     def check_connection(self):
+        """
+        Checks the status of the serial connection.
+
+        :return: True if the serial connection is open, False otherwise.
+        :rtype: bool
+        """
         self._logger.debug(f"DataLink.check_connection() -> self._serial.is_open={self._serial.is_open}")
         return self._serial.is_open
 
 
     def send(self, message):
+        """
+        Sends a message over the serial connection.
+
+        :param message: The message to be sent.
+        :type message: str
+        """
         packet = encode_packet(message)
         self._logger.info(f"DataLink.send(message: '{message}') -> packet: '{packet}'")
         self._serial.write(packet)
         
         
     def receive(self, since_time:float, timeout_seconds:float=1.0, polling_period:float=0.001):
+        """
+        Receives a message over the serial connection.
+
+        :param since_time: The time since the received message is considered as new.
+        :type since_time: float
+        :param timeout_seconds: The timeout period in seconds, defaults to 1.0.
+        :type timeout_seconds: float, optional
+        :param polling_period: The polling period in seconds, defaults to 0.001.
+        :type polling_period: float, optional
+        :return: A tuple containing a boolean indicating whether a message was received and the received message.
+        :rtype: tuple
+        """
         time_start = time.time()
         time_elapsed=0
         while time_elapsed < timeout_seconds:

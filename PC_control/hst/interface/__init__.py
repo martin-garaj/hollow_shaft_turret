@@ -1,6 +1,6 @@
 import logging
 from ..config import LOGGER_LEVEL
-from .interface import Interface
+from .interface import HST
 
 # Initialize logger with class name
 logger = logging.getLogger(__name__)

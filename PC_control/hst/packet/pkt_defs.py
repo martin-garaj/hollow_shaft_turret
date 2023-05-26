@@ -19,3 +19,13 @@ PKT_NACK                = bytes.fromhex('AB') # not-acknowledgement sequence
 BYTEORDER = 'little'
 PAYLOAD_BYTE_SIZE = 1
 COMMAND_BYTE_SIZE = 1
+
+# frequency value considered as STOP
+INACTIVE_FREQ           = (65535).to_bytes(length=4, byteorder=BYTEORDER)
+# default PFM frequency (can be changed in software)
+DEFAULT_PFM_FREQ        = (6400).to_bytes(length=4, byteorder=BYTEORDER)
+
+PFM_X              = 1
+PFM_Y              = 2
+PFM_Z              = 4
+PFM_A              = 8

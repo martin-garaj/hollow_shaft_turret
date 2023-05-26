@@ -1,9 +1,9 @@
 
 import sys
+import logging
 from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QVBoxLayout, QHBoxLayout, QRadioButton, QPushButton
 from PyQt5 import QtGui
-import logging
-from hst.interface import Interface
+from hst.interface import HST
 
 
 # Logger
@@ -15,10 +15,6 @@ formatter = logging.Formatter('{asctime} - {name:<34s} - {levelname:<7s} - {mess
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
-################################################################################
-##                             COMMMAND FUNCTIONS                             ##
-################################################################################
-
 
 ################################################################################
 ##                                   WINDOW                                   ##
@@ -26,7 +22,7 @@ logger.addHandler(console_handler)
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.turret = Interface("/dev/ttyACM0", 115200)
+        self.turret = HST("/dev/ttyACM0", 115200)
         # self.datalink = Datalink("/dev/ttyACM0", 115200)
         self.init_ui()
 
@@ -89,7 +85,7 @@ class MainWindow(QWidget):
             self.radio_btn_2_messages_edit.moveCursor(QtGui.QTextCursor.End)
             self.radio_btn_2_messages_edit.insertPlainText(f"{response}\n")
         else:
-            logger.info(f"MainWindow.display_packet(): NO REPLY")        
+            logger.info(f"MainWindow.display_packet(): NO REPLY")
 
 ################################################################################
 ##                                    MAIN                                    ##

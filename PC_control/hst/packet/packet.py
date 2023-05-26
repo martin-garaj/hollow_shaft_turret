@@ -2,7 +2,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .pkt_defs import *
-""" Naming convention
+""" Definitions
 
     Buffer: | ... | START_BYTES | PAYLOAD_SIZE | COMMAND | DATA | END_BYTES | ... | START_BYTES | ...|
     Packet:       | START_BYTES | PAYLOAD_SIZE | COMMAND | DATA | END_BYTES |
@@ -26,9 +26,14 @@ from .pkt_defs import *
           since this is purely Master-Worker relation (Worker never initiates communication) 
     Data
         - Data carried by the packet (e.g. ACK, NACK, IMU data)
+        
+Public functions:
+    parse_message()
+    encode_packet()
+    parse_buffer()
 """
 
-def parse_message(packet:bytearray):
+def parse_message(packet:bytearray) -> tuple(bytearray, bytearray):
     """ Break the packet into Command and Payload
 
     :param packet: Complete packet, including START_BYTES and END_BYTES
@@ -41,13 +46,14 @@ def parse_message(packet:bytearray):
     return command, data
 
 
-def encode_packet(payload):
-    """ Given a payload consisting of COMMAND and DATA
+def encode_packet(payload) -> bytearray:
+    """
+    Encodes a payload into a packet.
 
-    :param payload: _description_
-    :type payload: _type_
-    :return: _description_
-    :rtype: _type_
+    :param payload: The payload to be encoded into a packet.
+    :type payload: bytearray
+    :return: The encoded packet.
+    :rtype: bytearray
     """
     # Payload size (2 bytes, little-endian)
     payload_size = len(payload)
@@ -60,7 +66,7 @@ def encode_packet(payload):
     return message
 
 
-def find_bytes(byte_array:bytearray, bytes:bytearray):
+def _find_bytes(byte_array:bytearray, bytes:bytearray) -> list(int):
     """ Locate all indices of bytes-pattern within byte_array.
 
     :param byte_array: Array of bytes to be searched for a bytes-patter.
@@ -79,7 +85,7 @@ def find_bytes(byte_array:bytearray, bytes:bytearray):
     return indices
 
 
-def bytearray_to_int(bytearray_int:bytearray, byteorder:str=BYTEORDER):
+def _bytearray_to_int(bytearray_int:bytearray, byteorder:str=BYTEORDER) -> int:
     """ Decode a bytearray into an integer.
 
     :param bytearray_int: Array of bytes encoding a single integer.
@@ -92,20 +98,17 @@ def bytearray_to_int(bytearray_int:bytearray, byteorder:str=BYTEORDER):
     return int.from_bytes(bytearray_int, byteorder)
 
 
-def check_packet_complete(expected_packet:bytearray):
-    """ Check whether the packet is consistent according to PAYLOAD_SIZE.
+def _check_packet_complete(expected_packet:bytearray) -> tuple(bool, bytearray):
+    """
+    Checks whether a packet is complete according to its payload size.
 
-    :param buffer: _description_
-    :type buffer: bytearray
-    :param packet_start_idx: _description_
-    :type packet_start_idx: int
-    :param packet_end_idx: _description_
-    :type packet_end_idx: int
-    :return: _description_
-    :rtype: _type_
+    :param expected_packet: The packet to be checked.
+    :type expected_packet: bytearray
+    :return: A tuple containing a boolean indicating whether the packet is complete and the packet's payload.
+    :rtype: tuple
     """
     payload_size_bytes = expected_packet[len(START_BYTES):len(START_BYTES)+PAYLOAD_BYTE_SIZE]
-    message_size = bytearray_to_int(bytearray_int=payload_size_bytes) + PAYLOAD_BYTE_SIZE
+    message_size = _bytearray_to_int(bytearray_int=payload_size_bytes) + PAYLOAD_BYTE_SIZE
     if message_size == len(expected_packet)-len(START_BYTES)-len(END_BYTES):
         payload = expected_packet[len(START_BYTES)+PAYLOAD_BYTE_SIZE:len(START_BYTES)+message_size]
         return True, payload
@@ -114,7 +117,7 @@ def check_packet_complete(expected_packet:bytearray):
         return False, bytearray()
         
 
-def parse_buffer(buffer:bytearray):
+def parse_buffer(buffer:bytearray) -> tuple(bytearray, bytearray):
     """ Searches for a first complete packet within the buffer.
     
     Function searches the first consistent packet between all valid 
@@ -132,12 +135,12 @@ def parse_buffer(buffer:bytearray):
     :rtype: tuple(bytearray, bytearray)
     """
     # detect all START_BYTES
-    packet_start_idxs = find_bytes(byte_array=buffer, bytes=START_BYTES)
+    packet_start_idxs = _find_bytes(byte_array=buffer, bytes=START_BYTES)
     if packet_start_idxs[0] == -1:
         # no START_BYTES found, dump the buffer
         return bytearray(), bytearray()
     # detect all END_BYTES
-    packet_end_idxs = find_bytes(byte_array=buffer, bytes=END_BYTES)
+    packet_end_idxs = _find_bytes(byte_array=buffer, bytes=END_BYTES)
     # no END_BYTES found, return buffer to append more data
     if packet_end_idxs[0] == -1:
         return buffer, bytearray()
@@ -146,7 +149,7 @@ def parse_buffer(buffer:bytearray):
     for packet_start_idx in packet_start_idxs:
         for packet_end_idx in packet_end_idxs:
             expected_packet = buffer[packet_start_idx:packet_end_idx+len(END_BYTES)]
-            packet_detected, payload = check_packet_complete(expected_packet)
+            packet_detected, payload = _check_packet_complete(expected_packet)
             if packet_detected:
                 # remove the packet from the buffer
                 buffer = buffer[packet_end_idx+len(END_BYTES):]
